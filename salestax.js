@@ -1,27 +1,14 @@
 /* Copyright (c) 2012-2014 Nearform, MIT License */
 "use strict";
 
-var fs = require('fs')
-
-var defaultTaxRates = JSON.parse(fs.readFileSync('./default_tax_rates.json'))
-
-function salestax(options) {
+function salestax(taxRates) {
   var seneca = this
-  var plugin = "salestax"
+  var plugin = 'salestax'
 
-  options = seneca.util.deepextend({
-    taxRates: defaultTaxRates
-  }, options)
-
-  seneca.add( {role: plugin, cmd:'configure'}, function(args, callback) {
-    if(args.taxRates) {
-      options.taxRates = args.taxRates
-    }
-    callback(undefined)
-  })
+  taxRates = taxRates || {}
 
   seneca.add({ role: plugin, cmd:'resolve_salestax' }, function(args, callback) {
-    resolve_salestax(args.taxCategory, args.taxRates, undefined, callback)
+    resolve_salestax(args.taxCategory, taxRates, undefined, callback)
   })
 
   seneca.add({ role: plugin, cmd:'calculate_salestax' }, function(args, callback) {
@@ -38,7 +25,7 @@ function salestax(options) {
       }
     }
 
-    seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: options.taxRates}, function(err, taxRate) {
+    seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: taxRates}, function(err, taxRate) {
       if(err) {
         callback(err, undefined)
       } else {
@@ -117,7 +104,7 @@ function calculate_salestax(net, rate, callback){
 
   // rounding to 2 decimals is because JS has rounding errors:
   // http://stackoverflow.com/questions/588004/is-floating-point-math-broken
-  // TODO: make the number of decimal rounding configurable
+  // TODO: make the number of decimal rounding configurable or maybe it's not this plugin's role to fix it
   var tax =  Math.round(100 * net * rate) / 100
   var total = net + tax
   callback(null, { total: total, rate: rate, tax: tax })

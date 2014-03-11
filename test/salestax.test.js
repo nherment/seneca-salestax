@@ -9,41 +9,33 @@ var async = require('async')
 
 
 var si = seneca()
-si.use('../salestax.js')
+si.use('../salestax.js', {
+  country: {
+    'FR': 0.20,
+    'UK': {
+      '*': 0.20,
+      category: {
+        'energy': 0.05,
+        'child': 0.05,
+        'food': 0,
+        'children_clothes': 0
+      }
+    },
+    'IE': {
+      'category': {
+        'energy': 0.05,
+        'child': 0.05,
+        'food': 0,
+        'children_clothes': 0
+      }
+    }
+  }
+})
 
 var salestaxpin = si.pin({role: 'salestax', cmd: '*'})
 
 
 describe('salestax', function () {
-
-  it('configures', function(done) {
-    salestaxpin.configure({
-      taxRates: {
-        country: {
-          'FR': 0.20,
-          'UK': {
-            '*': 0.20,
-            category: {
-              'energy': 0.05,
-              'child': 0.05,
-              'food': 0,
-              'children_clothes': 0
-            }
-          },
-          'IE': {
-            'category': {
-              'energy': 0.05,
-              'child': 0.05,
-              'food': 0,
-              'children_clothes': 0
-            }
-          }
-        }
-      }
-    }, function(err, result) {
-      done()
-    })
-  })
 
   it('happy', function (done) {
     salestaxpin.salestax({
