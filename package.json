@@ -1,0 +1,34 @@
+{
+  "name": "seneca-salestax",
+  "version": "0.1.0",
+  "description": "seneca plugin to calculate sales taxes",
+  "main": "salestax.js",
+  "scripts": {
+    "test": "mocha test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nherment/seneca-salestax.git"
+  },
+  "keywords": [
+    "seneca",
+    "salestax",
+    "plugin"
+  ],
+  "author": "Nicolas Herment <nherment@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nherment/seneca-salestax/issues"
+  },
+  "homepage": "https://github.com/nherment/seneca-salestax",
+  "peerDependencies": {
+    "seneca": "*"
+  },
+  "devDependencies": {
+    "seneca": "0.5.x",
+    "mocha": "1.17.x",
+    "async": "0.2.x"
+  },
+  "dependencies": {
+  }
+}
