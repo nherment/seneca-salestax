@@ -64,6 +64,10 @@ This module is a plugin for the Seneca framework. It provides business logic for
             console.log('rate: ', calcResult.rate) // 0.05
           })
 
+          salestaxpin.salestax({net: 100, country: 'UK', category: 'unknown'}, function(err, calcResult){
+            console.log('error: ', err) // an error is returned because the category does not match a tax rate
+          })
+
       })
     })
 ```
