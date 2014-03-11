@@ -13,26 +13,26 @@ function salestax(options) {
     taxRates: defaultTaxRates
   }, options)
 
-  seneca.add( {role:plugin, cmd:'configure'}, function(args, callback) {
+  seneca.add( {role: plugin, cmd:'configure'}, function(args, callback) {
     if(args.taxRates) {
       options.taxRates = args.taxRates
     }
     callback(undefined)
   })
 
-  seneca.add({ role:plugin, cmd:'resolve_salestax' }, function(args, callback) {
+  seneca.add({ role: plugin, cmd:'resolve_salestax' }, function(args, callback) {
     resolve_salestax(args.taxCategory, args.taxRates, undefined, callback)
   })
 
-  seneca.add({ role:plugin, cmd:'calculate_salestax' }, function(args, callback) {
+  seneca.add({ role: plugin, cmd:'calculate_salestax' }, function(args, callback) {
     calculate_salestax(args.net, args.taxRate, callback)
   })
 
-  seneca.add({ role:plugin, cmd:'salestax' }, function(args, callback) {
+  seneca.add({ role: plugin, cmd:'salestax' }, function(args, callback) {
     var taxCategory = {}
     for(var arg in args) {
       if(args.hasOwnProperty(arg)) {
-        if(arg !== 'cmd' && arg != 'plugin' && arg != 'net' && !/\$$/m.test(arg)) {
+        if(arg !== 'cmd' && arg != 'role' && arg != 'net' && !/\$$/m.test(arg)) {
           taxCategory[arg] = args[arg]
         }
       }
@@ -50,7 +50,7 @@ function salestax(options) {
   })
 
   return {
-    name:plugin
+    name: plugin
   }
 }
 
@@ -114,7 +114,11 @@ function resolve_salestax(attributes, taxRates, trace, callback) {
 
 function calculate_salestax(net, rate, callback){
   var rate = isNaN(rate) ? 0 : rate
-  var tax =  Math.round(100* net * rate) / 100
+
+  // rounding to 2 decimals is because JS has rounding errors:
+  // http://stackoverflow.com/questions/588004/is-floating-point-math-broken
+  // TODO: make the number of decimal rounding configurable
+  var tax =  Math.round(100 * net * rate) / 100
   var total = net + tax
   callback(null, { total: total, rate: rate, tax: tax })
 }
