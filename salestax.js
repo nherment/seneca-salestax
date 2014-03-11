@@ -1,30 +1,28 @@
 /* Copyright (c) 2012-2014 Nearform, MIT License */
 "use strict";
 
+var fs = require('fs')
 
-function salestax(taxes) {
+var defaultTaxRates = JSON.parse(fs.readFileSync('./default_tax_rates.json'))
+
+function salestax(options) {
   var seneca = this
   var plugin = "salestax"
 
-  taxes = seneca.util.deepextend({
-    country: {
-      'FR': 0.206,
-      'UK': {
-        '*': 0.20,
-        category: {
-          'energy': 0.05,
-          'child': 0.05,
-          'food': 0,
-          'children_clothes': 0
-        }
+  options = seneca.util.deepextend({
+    rates: defaultTaxRates
+  }, options)
+
+  seneca.add( {role:plugin, cmd:'configure'},
+    function(args, callback) {
+      if(arg.rates) {
+        options.rates = args.rates
       }
-    }
-  }, taxes)
+      callback(undefined)
+    })
 
   seneca.add( {role:plugin, cmd:'salestax'},
-    {},
     function(args, callback) {
-
 
       var attributes = {}
       for(var arg in args) {
@@ -35,10 +33,7 @@ function salestax(taxes) {
         }
       }
 
-      console.log('****************', JSON.stringify(attributes))
-      console.log('****************', JSON.stringify(taxes))
-
-      resolve_salestax(args.net, attributes, taxes, undefined, callback)
+      resolve_salestax(args.net, attributes, options.rates, undefined, callback)
     })
 
   return {
@@ -69,14 +64,12 @@ function salestax(taxes) {
  *  {'country': 'IE', 'category': 'does not exist'} ==> Error
  *  {'country': 'FR', 'category': 'livestock'} ==> 0.206
  *
- * @param attributes
- * @param taxes
- * @param callback
  */
-function resolve_salestax(netPrice, attributes, taxes, trace, callback) {
+function resolve_salestax(netPrice, attributes, taxRates, trace, callback) {
+
   for(var attr in attributes) {
-    if(taxes && taxes.hasOwnProperty(attr)) {
-      taxes = taxes[attr][attributes[attr]]
+    if(taxRates && taxRates.hasOwnProperty(attr)) {
+      taxRates = taxRates[attr][attributes[attr]]
       delete attributes[attr]
 
       if(!trace) {
@@ -85,7 +78,7 @@ function resolve_salestax(netPrice, attributes, taxes, trace, callback) {
         trace += '.' + attr
       }
 
-      resolve_salestax(netPrice, attributes, taxes, trace, callback)
+      resolve_salestax(netPrice, attributes, taxRates, trace, callback)
       return
     }
   }
@@ -93,17 +86,17 @@ function resolve_salestax(netPrice, attributes, taxes, trace, callback) {
   // could not find a match, look for the wildcard
   var rate
 
-  if(!isNaN(taxes)) {
-    rate = taxes
-  } else if(taxes && !isNaN(taxes['*'])) {
-    rate = taxes['*']
+  if(!isNaN(taxRates)) {
+    rate = taxRates
+  } else if(taxRates && !isNaN(taxRates['*'])) {
+    rate = taxRates['*']
   }
 
   if(rate) {
     calculate_salestax(netPrice, rate, callback)
   } else {
     setImmediate(function() {
-      callback(new Error('Could not resolve tax rate '+JSON.stringify(attributes)+' for taxes '+JSON.stringify(taxes) + ' at '+trace))
+      callback(new Error('Could not resolve tax rate '+JSON.stringify(attributes)+' for taxRates '+JSON.stringify(taxRates) + ' at '+trace))
     })
   }
 }
