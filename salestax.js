@@ -10,31 +10,44 @@ function salestax(options) {
   var plugin = "salestax"
 
   options = seneca.util.deepextend({
-    rates: defaultTaxRates
+    taxRates: defaultTaxRates
   }, options)
 
-  seneca.add( {role:plugin, cmd:'configure'},
-    function(args, callback) {
-      if(arg.rates) {
-        options.rates = args.rates
-      }
-      callback(undefined)
-    })
+  seneca.add( {role:plugin, cmd:'configure'}, function(args, callback) {
+    if(args.taxRates) {
+      options.taxRates = args.taxRates
+    }
+    callback(undefined)
+  })
 
-  seneca.add( {role:plugin, cmd:'salestax'},
-    function(args, callback) {
+  seneca.add({ role:plugin, cmd:'resolve_salestax' }, function(args, callback) {
+    resolve_salestax(args.taxCategory, args.taxRates, undefined, callback)
+  })
 
-      var attributes = {}
-      for(var arg in args) {
-        if(args.hasOwnProperty(arg)) {
-          if(arg !== 'cmd' && arg != 'plugin' && arg != 'net' && !/\$$/m.test(arg)) {
-            attributes[arg] = args[arg]
-          }
+  seneca.add({ role:plugin, cmd:'calculate_salestax' }, function(args, callback) {
+    calculate_salestax(args.net, args.taxRate, callback)
+  })
+
+  seneca.add({ role:plugin, cmd:'salestax' }, function(args, callback) {
+    var taxCategory = {}
+    for(var arg in args) {
+      if(args.hasOwnProperty(arg)) {
+        if(arg !== 'cmd' && arg != 'plugin' && arg != 'net' && !/\$$/m.test(arg)) {
+          taxCategory[arg] = args[arg]
         }
       }
+    }
 
-      resolve_salestax(args.net, attributes, options.rates, undefined, callback)
+    seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: options.taxRates}, function(err, taxRate) {
+      if(err) {
+        callback(err, undefined)
+      } else {
+        seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
+          callback(err, calculatedTax)
+        })
+      }
     })
+  })
 
   return {
     name:plugin
@@ -65,7 +78,7 @@ function salestax(options) {
  *  {'country': 'FR', 'category': 'livestock'} ==> 0.206
  *
  */
-function resolve_salestax(netPrice, attributes, taxRates, trace, callback) {
+function resolve_salestax(attributes, taxRates, trace, callback) {
 
   for(var attr in attributes) {
     if(taxRates && taxRates.hasOwnProperty(attr)) {
@@ -78,7 +91,7 @@ function resolve_salestax(netPrice, attributes, taxRates, trace, callback) {
         trace += '.' + attr
       }
 
-      resolve_salestax(netPrice, attributes, taxRates, trace, callback)
+      resolve_salestax(attributes, taxRates, trace, callback)
       return
     }
   }
@@ -93,11 +106,9 @@ function resolve_salestax(netPrice, attributes, taxRates, trace, callback) {
   }
 
   if(rate) {
-    calculate_salestax(netPrice, rate, callback)
+    callback(undefined, rate)
   } else {
-    setImmediate(function() {
-      callback(new Error('Could not resolve tax rate '+JSON.stringify(attributes)+' for taxRates '+JSON.stringify(taxRates) + ' at '+trace))
-    })
+    callback(new Error('Could not resolve tax rate '+JSON.stringify(attributes)+' for taxRates '+JSON.stringify(taxRates) + ' at '+trace))
   }
 }
 
@@ -107,7 +118,5 @@ function calculate_salestax(net, rate, callback){
   var total = net + tax
   callback(null, { total: total, rate: rate, tax: tax })
 }
-
-
 
 module.exports = salestax

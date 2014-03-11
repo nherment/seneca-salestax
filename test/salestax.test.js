@@ -18,7 +18,7 @@ describe('salestax', function () {
 
   it('configures', function(done) {
     salestaxpin.configure({
-      rates: {
+      taxRates: {
         country: {
           'FR': 0.20,
           'UK': {
