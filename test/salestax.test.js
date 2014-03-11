@@ -29,6 +29,14 @@ describe('salestax', function () {
               'food': 0,
               'children_clothes': 0
             }
+          },
+          'IE': {
+            'category': {
+              'energy': 0.05,
+              'child': 0.05,
+              'food': 0,
+              'children_clothes': 0
+            }
           }
         }
       }
@@ -76,6 +84,29 @@ describe('salestax', function () {
       assert.equal(result.tax, 5)
       assert.equal(result.rate, 0.05)
       assert.equal(result.total, 105)
+      done()
+    })
+  })
+
+  it('non existent nested value', function (done) {
+    salestaxpin.salestax({
+      net: 100,
+      country: 'UK',
+      category: 'does not exist'
+    }, function(err, result) {
+      assert.ok(err)
+      assert.ok(!result)
+      done()
+    })
+  })
+
+  it('no nested value fails if there is no wildcard', function (done) {
+    salestaxpin.salestax({
+      net: 100,
+      country: 'IE'
+    }, function(err, result) {
+      assert.ok(err)
+      assert.ok(!result)
       done()
     })
   })
