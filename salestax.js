@@ -28,7 +28,14 @@ function salestax(taxRates) {
     seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: taxRates}, function(err, taxRate) {
       if(err) {
         seneca.log.error(err)
-        callback(new Error('could not resolve the given tax rate: '+JSON.stringify(taxCategory)), undefined)
+
+        var message = 'could not resolve the following tax rate ' +
+                        JSON.stringify(taxCategory) +
+                        ' for the following available rates ' +
+                        JSON.stringify(taxRates)
+
+        seneca.log.error(message)
+        callback(new Error(message), undefined)
       } else {
         seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
           callback(err, calculatedTax)
@@ -44,7 +51,7 @@ function salestax(taxRates) {
 
 
 /** given:
- *    options: {
+ *    taxRates: {
  *      'country': {
  *        'IE': {
  *          '*': 0.23,
@@ -59,7 +66,7 @@ function salestax(taxRates) {
  *      }
  *    }
  *
- *
+ * the method will match the following attributes:
  *  {'country': 'IE'} ==> 0.23
  *  {'country': 'IE', 'category': 'livestock'} ==> 0.048
  *  {'country': 'IE', 'category': 'does not exist'} ==> Error
