@@ -27,7 +27,8 @@ function salestax(taxRates) {
 
     seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: taxRates}, function(err, taxRate) {
       if(err) {
-        callback(err, undefined)
+        seneca.log.error(err)
+        callback(new Error('could not resolve the given tax rate: '+JSON.stringify(taxCategory)), undefined)
       } else {
         seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
           callback(err, calculatedTax)
@@ -95,7 +96,7 @@ function resolve_salestax(attributes, taxRates, trace, callback) {
   if(rate) {
     callback(undefined, rate)
   } else {
-    callback(new Error('Could not resolve tax rate '+JSON.stringify(attributes)+' for taxRates '+JSON.stringify(taxRates) + ' at '+trace))
+    callback(new Error('Could not resolve tax rate'))
   }
 }
 
