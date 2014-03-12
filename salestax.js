@@ -96,7 +96,7 @@ function resolve_salestax(attributes, taxRates, trace, callback) {
   if(rate) {
     callback(undefined, rate)
   } else {
-    callback(new Error('Could not resolve tax rate'))
+    callback(new Error('Could not resolve tax rate at ' + trace))
   }
 }
 
