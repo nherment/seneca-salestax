@@ -12,7 +12,7 @@ function salestax(taxRates) {
   })
 
   seneca.add({ role: plugin, cmd:'calculate_salestax' }, function(args, callback) {
-    calculate_salestax(args.net, args.taxRate, callback)
+    calculate_salestax(Number(args.net), args.taxRate, callback)
   })
 
   seneca.add({ role: plugin, cmd:'salestax' }, function(args, callback) {
