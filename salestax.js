@@ -106,7 +106,7 @@ function calculate_salestax(net, rate, callback){
   // http://stackoverflow.com/questions/588004/is-floating-point-math-broken
   // TODO: make the number of decimal rounding configurable or maybe it's not this plugin's role to fix it
   var tax =  Math.round(100 * net * rate) / 100
-  var total = net + tax
+  var total = Math.round(100 * (net + tax)) / 100
   callback(null, { total: total, rate: rate, tax: tax })
 }
 
