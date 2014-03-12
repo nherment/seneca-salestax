@@ -92,8 +92,7 @@ function resolve_salestax(attributes, taxRates, trace, callback) {
   } else if(taxRates && !isNaN(taxRates['*'])) {
     rate = taxRates['*']
   }
-
-  if(rate) {
+  if(!isNaN(rate)) {
     callback(undefined, rate)
   } else {
     callback(new Error('Could not resolve tax rate at ' + trace))

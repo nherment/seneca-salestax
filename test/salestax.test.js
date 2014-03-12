@@ -28,6 +28,13 @@ si.use('../salestax.js', {
         'food': 0,
         'children_clothes': 0
       }
+    },
+    'USA': {
+      '*': 0,
+      'state': {
+        'CA': 0.875,
+        'AK': 0
+      }
     }
   }
 })
@@ -99,6 +106,35 @@ describe('salestax', function () {
     }, function(err, result) {
       assert.ok(err)
       assert.ok(!result)
+      done()
+    })
+  })
+
+  it('zero tax rate is valid', function (done) {
+    salestaxpin.salestax({
+      net: 100,
+      country: 'USA'
+    }, function(err, result) {
+      assert.ok(!err)
+      assert.ok(result)
+      assert.equal(result.tax, 0)
+      assert.equal(result.rate, 0)
+      assert.equal(result.total, 100)
+      done()
+    })
+  })
+
+  it('zero tax rate wildcard is valid', function (done) {
+    salestaxpin.salestax({
+      net: 100,
+      country: 'USA',
+      state: 'AK'
+    }, function(err, result) {
+      assert.ok(!err)
+      assert.ok(result)
+      assert.equal(result.tax, 0)
+      assert.equal(result.rate, 0)
+      assert.equal(result.total, 100)
       done()
     })
   })
