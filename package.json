@@ -1,6 +1,6 @@
 {
   "name": "seneca-salestax",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "seneca plugin to calculate sales taxes",
   "main": "salestax.js",
   "scripts": {
