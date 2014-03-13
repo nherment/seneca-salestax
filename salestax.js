@@ -22,28 +22,16 @@ function salestax(taxRates) {
     }
   }
 
-  function buildMicroservices(filter, taxRates) {
-    for(var attr in taxRates) {
-      if(attr === '*') {
-        seneca.add(filter, getTaxRateHandler(taxRates[attr]))
-      } else {
-        for(var attrValue in taxRates[attr]) {
-          var f = clone(filter)
-          f[attr] = attrValue
-          if(_.isObject(taxRates[attr][attrValue])) {
-            buildMicroservices(f, taxRates[attr][attrValue])
-          } else if(!isNaN(taxRates[attr][attrValue])) {
-            seneca.add(f, getTaxRateHandler(taxRates[attr][attrValue]))
-          } else {
-            throw new Error('unsupported tax rate '+JSON.stringify(taxRates[attr][attrValue]))
-          }
-        }
-      }
+  var ot = new ObjectTree({wildcard: '*'})
 
-    }
-  }
+  var parser = ot.generateFilters(taxRates)
+  parser.on('filter', function(taxRate, filter, attrs) {
 
-  buildMicroservices({role: plugin, cmd: 'salestax'}, taxRates)
+    filter.role = plugin
+    filter.cmd = 'salestax'
+
+    seneca.add(filter, getTaxRateHandler(taxRate))
+  })
 
   return {
     name: plugin
