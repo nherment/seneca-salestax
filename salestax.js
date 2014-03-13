@@ -1,109 +1,62 @@
 /* Copyright (c) 2012-2014 Nearform, MIT License */
 "use strict";
 
+var ObjectTree = require('object-tree')
+var _ = require('underscore')
+
 function salestax(taxRates) {
   var seneca = this
   var plugin = 'salestax'
 
   taxRates = taxRates || {}
 
-  seneca.add({ role: plugin, cmd:'resolve_salestax' }, function(args, callback) {
-    resolve_salestax(args.taxCategory, taxRates, undefined, callback)
-  })
-
   seneca.add({ role: plugin, cmd:'calculate_salestax' }, function(args, callback) {
     calculate_salestax(Number(args.net), args.taxRate, callback)
   })
 
-  seneca.add({ role: plugin, cmd:'salestax' }, function(args, callback) {
-    var taxCategory = {}
-    for(var arg in args) {
-      if(args.hasOwnProperty(arg)) {
-        if(arg !== 'cmd' && arg != 'role' && arg != 'net' && !/\$$/m.test(arg)) {
-          taxCategory[arg] = args[arg]
+  function getTaxRateHandler(taxRate) {
+    return function(args, callback) {
+      console.log(taxRate, JSON.stringify(args))
+      seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
+        callback(err, calculatedTax)
+      })
+    }
+  }
+
+  function buildMicroservices(filter, taxRates) {
+    for(var attr in taxRates) {
+      if(attr === '*') {
+        seneca.add(filter, getTaxRateHandler(taxRates[attr]))
+      } else {
+        for(var attrValue in taxRates[attr]) {
+          var f = clone(filter)
+          f[attr] = attrValue
+          if(_.isObject(taxRates[attr][attrValue])) {
+            buildMicroservices(f, taxRates[attr][attrValue])
+          } else if(!isNaN(taxRates[attr][attrValue])) {
+            seneca.add(f, getTaxRateHandler(taxRates[attr][attrValue]))
+          } else {
+            throw new Error('unsupported tax rate '+JSON.stringify(taxRates[attr][attrValue]))
+          }
         }
       }
+
     }
+  }
 
-    seneca.act({role: plugin, cmd: 'resolve_salestax', taxCategory: taxCategory, taxRates: taxRates}, function(err, taxRate) {
-      if(err) {
-        seneca.log.error(err)
-
-        var message = 'could not resolve the following tax rate ' +
-                        JSON.stringify(taxCategory) +
-                        ' for the following available rates ' +
-                        JSON.stringify(taxRates)
-
-        seneca.log.error(message)
-        callback(new Error(message), undefined)
-      } else {
-        seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
-          callback(err, calculatedTax)
-        })
-      }
-    })
-  })
+  buildMicroservices({role: plugin, cmd: 'salestax'}, taxRates)
 
   return {
     name: plugin
   }
 }
 
-
-/** given:
- *    taxRates: {
- *      'country': {
- *        'IE': {
- *          '*': 0.23,
- *          'category': {
- *            'reduced1': 0.135,
- *            'reduced2': 0.09,
- *            'livestock': 0.048,
- *            'farmers': 0.05
- *          }
- *        },
- *        'FR': 0.206
- *      }
- *    }
- *
- * the method will match the following attributes:
- *  {'country': 'IE'} ==> 0.23
- *  {'country': 'IE', 'category': 'livestock'} ==> 0.048
- *  {'country': 'IE', 'category': 'does not exist'} ==> Error
- *  {'country': 'FR', 'category': 'livestock'} ==> 0.206
- *
- */
-function resolve_salestax(attributes, taxRates, trace, callback) {
-
-  for(var attr in attributes) {
-    if(taxRates && taxRates.hasOwnProperty(attr)) {
-      taxRates = taxRates[attr][attributes[attr]]
-      delete attributes[attr]
-
-      if(!trace) {
-        trace = attr
-      } else {
-        trace += '.' + attr
-      }
-
-      resolve_salestax(attributes, taxRates, trace, callback)
-      return
-    }
+function clone(obj) {
+  var clone = {}
+  for(var attr in obj) {
+    clone[attr] = obj[attr]
   }
-
-  // could not find a match, look for the wildcard
-  var rate
-
-  if(!isNaN(taxRates)) {
-    rate = taxRates
-  } else if(taxRates && !isNaN(taxRates['*'])) {
-    rate = taxRates['*']
-  }
-  if(!isNaN(rate)) {
-    callback(undefined, rate)
-  } else {
-    callback(new Error('Could not resolve tax rate at ' + trace))
-  }
+  return clone
 }
 
 function calculate_salestax(net, rate, callback){

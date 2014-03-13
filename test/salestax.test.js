@@ -2,14 +2,13 @@
 "use strict";
 
 
-var seneca = require('seneca')
+var seneca = require('seneca')()
 
 var assert = require('assert')
 var async = require('async')
 
 
-var si = seneca()
-si.use('../salestax.js', {
+seneca.use('../salestax.js', {
   country: {
     'FR': 0.20,
     'UK': {
@@ -39,13 +38,13 @@ si.use('../salestax.js', {
   }
 })
 
-var salestaxpin = si.pin({role: 'salestax', cmd: '*'})
-
 
 describe('salestax', function () {
 
   it('happy', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'FR'
     }, function(err, result) {
@@ -59,7 +58,9 @@ describe('salestax', function () {
   })
 
   it('wildcard', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'UK'
     }, function(err, result) {
@@ -73,7 +74,9 @@ describe('salestax', function () {
   })
 
   it('nested', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'UK',
       category: 'child'
@@ -87,12 +90,32 @@ describe('salestax', function () {
     })
   })
 
-  it('non existent nested value', function (done) {
-    salestaxpin.salestax({
+  it('non existent nested value with wildcard', function (done) {
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'UK',
       category: 'does not exist'
     }, function(err, result) {
+      assert.ok(!err, err)
+      assert.ok(result)
+      assert.equal(result.tax, 20)
+      assert.equal(result.rate, 0.20)
+      assert.equal(result.total, 120)
+      done()
+    })
+  })
+
+  it('non existent nested value without wildcard', function (done) {
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
+      net: 100,
+      country: 'IE',
+      category: 'does not exist'
+    }, function(err, result) {
+      console.log('non existent nested value', err, result)
       assert.ok(err)
       assert.ok(!result)
       done()
@@ -100,7 +123,9 @@ describe('salestax', function () {
   })
 
   it('no nested value fails if there is no wildcard', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'IE'
     }, function(err, result) {
@@ -111,7 +136,9 @@ describe('salestax', function () {
   })
 
   it('zero tax rate is valid', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'USA'
     }, function(err, result) {
@@ -125,7 +152,9 @@ describe('salestax', function () {
   })
 
   it('zero tax rate wildcard is valid', function (done) {
-    salestaxpin.salestax({
+    seneca.act({
+      role: 'salestax',
+      cmd: 'salestax',
       net: 100,
       country: 'USA',
       state: 'AK'
