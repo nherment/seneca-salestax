@@ -115,9 +115,11 @@ describe('salestax', function () {
       country: 'IE',
       category: 'does not exist'
     }, function(err, result) {
-      console.log('non existent nested value', err, result)
-      assert.ok(err)
-      assert.ok(!result)
+      assert.ok(!err, err)
+      assert.ok(result)
+      assert.equal(result.tax, 0)
+      assert.equal(result.rate, 0)
+      assert.equal(result.total, 100)
       done()
     })
   })
@@ -129,8 +131,11 @@ describe('salestax', function () {
       net: 100,
       country: 'IE'
     }, function(err, result) {
-      assert.ok(err)
-      assert.ok(!result)
+      assert.ok(!err, err)
+      assert.ok(result)
+      assert.equal(result.tax, 0)
+      assert.equal(result.rate, 0)
+      assert.equal(result.total, 100)
       done()
     })
   })

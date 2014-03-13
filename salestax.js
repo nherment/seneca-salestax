@@ -10,14 +10,13 @@ function salestax(taxRates) {
 
   taxRates = taxRates || {}
 
-  seneca.add({ role: plugin, cmd:'calculate_salestax' }, function(args, callback) {
-    calculate_salestax(Number(args.net), args.taxRate, callback)
+  seneca.add({ role: plugin, cmd:'salestax' }, function(args, callback) {
+    calculate_salestax(Number(args.net), args.rate, callback)
   })
 
-  function getTaxRateHandler(taxRate) {
+  function getTaxRateHandler(rate) {
     return function(args, callback) {
-      console.log(taxRate, JSON.stringify(args))
-      seneca.act({role: plugin, cmd: 'calculate_salestax', net: args.net, taxRate: taxRate}, function(err, calculatedTax) {
+      seneca.act({role: plugin, cmd: 'salestax', net: args.net, rate: rate}, function(err, calculatedTax) {
         callback(err, calculatedTax)
       })
     }

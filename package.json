@@ -4,7 +4,7 @@
   "description": "seneca plugin to calculate sales taxes",
   "main": "salestax.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha test/*.test.js"
+    "test": "./node_modules/.bin/mocha test/*.test.js --reporter spec"
   },
   "repository": {
     "type": "git",
